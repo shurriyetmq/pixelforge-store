@@ -14,6 +14,7 @@ function App() {
   const [error, setError] = useState(null);
   const openPopup = (product) => setSelectedProduct(product);
   const closePopup = () => setSelectedProduct(null);
+  const [search, setSearch] = useState("");
 
   // fetch products
  useEffect(() => {
@@ -107,7 +108,11 @@ function App() {
     setFilters({ ...filters, [category]: !filters[category] });
   };
 
-  let filteredProducts = products.filter((p) => filters[p.category]);
+  let filteredProducts = products
+  .filter((p) => filters[p.category])
+  .filter((p) =>
+    p.name.toLowerCase().includes(search.toLowerCase())
+  );
   if (priceSort === "high") filteredProducts = [...filteredProducts].sort((a, b) => b.price - a.price);
   if (priceSort === "low") filteredProducts = [...filteredProducts].sort((a, b) => a.price - b.price);
 
@@ -116,6 +121,13 @@ function App() {
       <header className="header">
         <h1>PixelForge</h1>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          <input
+  type="text"
+  placeholder="Search products..."
+  value={search}
+  onChange={(e) => setSearch(e.target.value)}
+  style={{ padding: "0.5rem", borderRadius: "8px" }}
+/>
           <button
             className="dark-toggle"
             onClick={() => setDarkMode(!darkMode)}
