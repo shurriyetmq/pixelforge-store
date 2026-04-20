@@ -16,6 +16,38 @@ function App() {
   const closePopup = () => setSelectedProduct(null);
   const [search, setSearch] = useState("");
 
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [token, setToken] = useState(localStorage.getItem("token"));
+
+  const handleLogin = async () => {
+  const formData = new URLSearchParams();
+  formData.append("username", username);
+  formData.append("password", password);
+
+  try {
+    const res = await fetch("http://127.0.0.1:8001/token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: formData,
+    });
+
+    const data = await res.json();
+
+    if (data.access_token) {
+      localStorage.setItem("token", data.access_token);
+      setToken(data.access_token);
+      alert("Login successful!");
+    } else {
+      alert("Login failed");
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
+
   // fetch products
  useEffect(() => {
   setLoading(true);
@@ -128,6 +160,21 @@ function App() {
   onChange={(e) => setSearch(e.target.value)}
   style={{ padding: "0.5rem", borderRadius: "8px" }}
 />
+<div style={{ margin: "1rem" }}>
+  <input
+    type="text"
+    placeholder="Username"
+    value={username}
+    onChange={(e) => setUsername(e.target.value)}
+  />
+  <input
+    type="password"
+    placeholder="Password"
+    value={password}
+    onChange={(e) => setPassword(e.target.value)}
+  />
+  <button onClick={handleLogin}>Login</button>
+</div>
           <button
             className="dark-toggle"
             onClick={() => setDarkMode(!darkMode)}

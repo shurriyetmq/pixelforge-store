@@ -8,6 +8,8 @@ from pydantic import BaseModel
 import mysql.connector
 from datetime import datetime, timedelta
 
+
+
 app = FastAPI()
 
 SECRET_KEY = "supersecretkey123" # set up auth system
