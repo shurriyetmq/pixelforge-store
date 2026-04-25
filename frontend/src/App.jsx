@@ -20,6 +20,8 @@ function App() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [token, setToken] = useState(localStorage.getItem("token"));
+  const [adminData, setAdminData] = useState([]);
+  const [role, setRole] = useState(null);
 
   const handleLogin = async () => {
   const formData = new URLSearchParams();
@@ -48,6 +50,56 @@ function App() {
     console.error(err);
   }
 };
+
+const fetchAdminData = () => {
+  // 🔁 if already open → close it
+  if (adminData.length > 0) {
+    setAdminData([]);
+    return;
+  }
+
+  if (!token) {
+    alert("Please log in first");
+    return;
+  }
+
+  fetch("http://127.0.0.1:8001/admin/carts", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error("Admin access only");
+      }
+      return res.json();
+    })
+    .then((data) => setAdminData(data))
+    .catch((err) => {
+      console.error(err);
+      alert("Only admins can view all carts");
+    });
+};
+
+const getUserRole = () => {
+  if (!token) return null;
+
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.role;
+  } catch (err) {
+    console.error("Invalid token");
+    return null;
+  }
+};
+
+useEffect(() => {
+  if (token) {
+    setRole(getUserRole());
+  } else {
+    setRole(null);
+  }
+}, [token]);
 
   // fetch products
  useEffect(() => {
@@ -203,14 +255,23 @@ function App() {
     <button onClick={handleLogin}>Login</button>
   </>
 ) : (
-  <button
-    onClick={() => {
-      localStorage.removeItem("token");
-      setToken(null);
-    }}
-  >
-    Logout
+  <>
+    <button
+      onClick={() => {
+        localStorage.removeItem("token");
+        setToken(null);
+        setAdminData([]);
+      }}
+    >
+      Logout
+    </button>
+
+    {role === "admin" && (
+  <button onClick={fetchAdminData}>
+    View All Carts
   </button>
+)}
+  </>
 )}
 </div>
           <button
@@ -286,7 +347,41 @@ function App() {
             </div>
           </div>
         )}
+        {role === "admin" && adminData.length > 0 &&(
+  <div className="admin-carts">
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+  <h2>All Users' Carts</h2>
 
+  <button
+    onClick={() => setAdminData([])}
+    style={{
+      background: "transparent",
+      border: "none",
+      fontSize: "1.2rem",
+      cursor: "pointer"
+    }}
+  >
+    ✖
+  </button>
+</div>
+
+    {adminData.map((item, index) => (
+      <div key={index} className="admin-cart-item">
+        <img
+          src={item.image_url}
+          alt={item.name}
+          style={{ width: "60px", height: "60px", objectFit: "cover" }}
+        />
+        <div>
+          <p><strong>User:</strong> {item.username}</p>
+          <p><strong>Product:</strong> {item.name}</p>
+          <p><strong>Quantity:</strong> {item.quantity}</p>
+          <p><strong>Price:</strong> ${item.price.toFixed(2)}</p>
+        </div>
+      </div>
+    ))}
+  </div>
+)}
         {loading && <p>Loading products...</p>}
 
         {error && (
