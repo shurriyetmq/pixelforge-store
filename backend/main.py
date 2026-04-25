@@ -58,8 +58,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
     return {"access_token": access_token, "token_type": "bearer"}
 
-
-def get_current_user(token: str = Depends(oauth2_scheme)): #verify token
+def get_current_user(token: str = Depends(oauth2_scheme)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username = payload.get("sub")
@@ -67,7 +66,31 @@ def get_current_user(token: str = Depends(oauth2_scheme)): #verify token
         if username is None:
             raise HTTPException(status_code=401, detail="Invalid token")
 
-        return username
+        connection = get_db_connection()
+        cursor = connection.cursor(dictionary=True)
+
+        cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
+        user = cursor.fetchone()
+
+        cursor.close()
+        connection.close()
+
+        if user is None:
+            raise HTTPException(status_code=401, detail="User not found")
+
+        return user
+
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+def get_admin_user(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+
+        if payload.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="Not authorized")
+
+        return payload
 
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -109,21 +132,25 @@ def get_products():
 
 # GET CART ITEMS
 @app.get("/cart")
-def get_cart(current_user: str = Depends(get_current_user)):
+def get_cart(current_user: dict = Depends(get_current_user)):
     try:
         connection = get_db_connection()
         cursor = connection.cursor(dictionary=True)
 
         query = """
-        SELECT cart_items.id, cart_items.product_id, products.name, products.price, products.image_url, cart_items.quantity
+        SELECT cart_items.id, cart_items.product_id, products.name, products.price, 
+               products.image_url, cart_items.quantity
         FROM cart_items
         JOIN products ON cart_items.product_id = products.id
+        WHERE cart_items.user_id = %s
         """ 
-        cursor.execute(query)
+        cursor.execute(query, (current_user["id"],))
         items = cursor.fetchall()
         return items
+
     except Exception as e:
         return {"error": str(e)}
+
     finally:
         cursor.close()
         connection.close()
@@ -131,30 +158,45 @@ def get_cart(current_user: str = Depends(get_current_user)):
 
 # ADD TO CART
 @app.post("/cart")
-def add_to_cart(item: CartItem):
+def add_to_cart(item: CartItem, user: dict = Depends(get_current_user)):
     connection = get_db_connection()
     cursor = connection.cursor()
 
-    cursor.execute("SELECT id, quantity FROM cart_items WHERE product_id = %s", (item.product_id,))
+    cursor.execute(
+        "SELECT id, quantity FROM cart_items WHERE product_id = %s AND user_id = %s",
+        (item.product_id, user["id"])
+    )
     existing = cursor.fetchone()
 
     if existing:
         new_quantity = existing[1] + item.quantity
-        cursor.execute("UPDATE cart_items SET quantity = %s WHERE id = %s", (new_quantity, existing[0]))
+        cursor.execute(
+            "UPDATE cart_items SET quantity = %s WHERE id = %s",
+            (new_quantity, existing[0])
+        )
     else:
-        cursor.execute("INSERT INTO cart_items (product_id, quantity) VALUES (%s, %s)", (item.product_id, item.quantity))
+        cursor.execute(
+            "INSERT INTO cart_items (product_id, quantity, user_id) VALUES (%s, %s, %s)",
+            (item.product_id, item.quantity, user["id"])
+        )
 
     connection.commit()
     cursor.close()
     connection.close()
+
     return {"message": "Item added to cart"}
 
 # UPDATE CART ITEM QUANTITY
 @app.put("/cart/{item_id}")
-def update_cart(item_id: int, item: CartItem):
+def update_cart(item_id: int, item: CartItem, user: dict = Depends(get_current_user)):
     connection = get_db_connection()
     cursor = connection.cursor()
-    cursor.execute("UPDATE cart_items SET quantity = %s WHERE id = %s", (item.quantity, item_id))
+
+    cursor.execute(
+        "UPDATE cart_items SET quantity = %s WHERE id = %s AND user_id = %s",
+        (item.quantity, item_id, user["id"])
+    )
+
     connection.commit()
     cursor.close()
     connection.close()
@@ -163,13 +205,18 @@ def update_cart(item_id: int, item: CartItem):
 
 # REMOVE CART ITEM
 @app.delete("/cart/{item_id}")
-def remove_cart_item(item_id: int):
+def remove_cart_item(item_id: int, user: dict = Depends(get_current_user)):
     connection = get_db_connection()
     cursor = connection.cursor()
+
     try:
-        cursor.execute("DELETE FROM cart_items WHERE id = %s", (item_id,))
+        cursor.execute(
+            "DELETE FROM cart_items WHERE id = %s AND user_id = %s",
+            (item_id, user["id"])
+        )
         connection.commit()
         return {"message": "Item removed"}
+
     finally:
         cursor.close()
         connection.close()
@@ -184,15 +231,44 @@ def register(user: User):
     connection = get_db_connection()
     cursor = connection.cursor()
 
-    hashed = hash_password(user.password)
+    try:
+        hashed = hash_password(user.password)
 
-    cursor.execute(
-        "INSERT INTO users (username, password_hash) VALUES (%s, %s)",
-        (user.username, hashed)
-    )
+        cursor.execute(
+            "INSERT INTO users (username, password_hash, role) VALUES (%s, %s, %s)",
+            (user.username, hashed, "user")
+        )
 
-    connection.commit()
+        connection.commit()
+        return {"message": "User registered successfully"}
+
+    except mysql.connector.IntegrityError:
+        raise HTTPException(status_code=400, detail="Username already exists")
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    finally:
+        cursor.close()
+        connection.close()
+
+@app.get("/admin/carts")
+def get_all_carts(admin: dict = Depends(get_admin_user)):
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    query = """
+    SELECT users.username, products.name, products.price, 
+           products.image_url, cart_items.quantity
+    FROM cart_items
+    JOIN products ON cart_items.product_id = products.id
+    JOIN users ON users.id = cart_items.user_id
+    """
+
+    cursor.execute(query)
+    data = cursor.fetchall()
+
     cursor.close()
     connection.close()
 
-    return {"message": "User registered successfully"}
+    return data

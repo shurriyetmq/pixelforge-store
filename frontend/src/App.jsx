@@ -16,6 +16,7 @@ function App() {
   const closePopup = () => setSelectedProduct(null);
   const [search, setSearch] = useState("");
 
+  // auth state
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [token, setToken] = useState(localStorage.getItem("token"));
@@ -78,21 +79,38 @@ function App() {
 
   // fetch cart from backend
   const fetchCart = () => {
-    fetch("http://127.0.0.1:8000/cart")
-      .then((res) => res.json())
-      .then((data) => setCartItems(data))
-      .catch((err) => console.error("Error fetching cart:", err));
-  };
+  if (!token) return; //don't fetch if not logged in
+
+  fetch("http://127.0.0.1:8001/cart", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error("Not authorized");
+      return res.json();
+    })
+    .then((data) => setCartItems(data))
+    .catch((err) => console.error("Error fetching cart:", err));
+};
 
   useEffect(() => {
+  if (token) {
     fetchCart();
-  }, []);
+  }
+}, [token]);
 
   // add item to cart
   const addToCart = (product) => {
-    fetch("http://127.0.0.1:8000/cart", {
+    if (!token) {
+      alert("Please log in to add items to your cart.");
+      return;
+    }
+    fetch("http://127.0.0.1:8001/cart", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify({ product_id: product.id, quantity: 1 }),
     })
       .then(() => fetchCart())
@@ -107,7 +125,12 @@ function App() {
 
   // remove item
   const removeFromCart = (itemId) => {
-    fetch(`http://127.0.0.1:8000/cart/${itemId}`, { method: "DELETE" })
+    fetch(`http://127.0.0.1:8001/cart/${itemId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
       .then(() => fetchCart())
       .then(() => {
         const audio = new Audio("/sounds/remove-from-cart.mp3");
@@ -121,9 +144,11 @@ function App() {
     const newQuantity = currentQuantity + delta;
     if (newQuantity < 1) return;
 
-    fetch(`http://127.0.0.1:8000/cart/${itemId}`, {
+    fetch(`http://127.0.0.1:8001/cart/${itemId}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+       },
       body: JSON.stringify({ product_id: productId, quantity: newQuantity }),
     })
       .then(() => fetchCart())
@@ -161,19 +186,32 @@ function App() {
   style={{ padding: "0.5rem", borderRadius: "8px" }}
 />
 <div style={{ margin: "1rem" }}>
-  <input
-    type="text"
-    placeholder="Username"
-    value={username}
-    onChange={(e) => setUsername(e.target.value)}
-  />
-  <input
-    type="password"
-    placeholder="Password"
-    value={password}
-    onChange={(e) => setPassword(e.target.value)}
-  />
-  <button onClick={handleLogin}>Login</button>
+{!token ? (
+  <>
+    <input
+      type="text"
+      placeholder="Username"
+      value={username}
+      onChange={(e) => setUsername(e.target.value)}
+    />
+    <input
+      type="password"
+      placeholder="Password"
+      value={password}
+      onChange={(e) => setPassword(e.target.value)}
+    />
+    <button onClick={handleLogin}>Login</button>
+  </>
+) : (
+  <button
+    onClick={() => {
+      localStorage.removeItem("token");
+      setToken(null);
+    }}
+  >
+    Logout
+  </button>
+)}
 </div>
           <button
             className="dark-toggle"
