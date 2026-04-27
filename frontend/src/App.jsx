@@ -52,7 +52,6 @@ function App() {
 };
 
 const fetchAdminData = () => {
-  // 🔁 if already open → close it
   if (adminData.length > 0) {
     setAdminData([]);
     return;
@@ -139,7 +138,7 @@ useEffect(() => {
     },
   })
     .then((res) => {
-      if (!res.ok) throw new Error("Not authorized");
+      if (!res.ok) throw new Error("Not authorised");
       return res.json();
     })
     .then((data) => setCartItems(data))
@@ -235,35 +234,35 @@ useEffect(() => {
   placeholder="Search products..."
   value={search}
   onChange={(e) => setSearch(e.target.value)}
-  style={{ padding: "0.5rem", borderRadius: "8px" }}
+  className="search-input"
 />
-<div style={{ margin: "1rem" }}>
+<div className="auth-container">
 {!token ? (
   <>
-    <input
+    <input className="auth-input"
       type="text"
       placeholder="Username"
       value={username}
       onChange={(e) => setUsername(e.target.value)}
     />
-    <input
+    <input className="auth-input"
       type="password"
       placeholder="Password"
       value={password}
       onChange={(e) => setPassword(e.target.value)}
     />
-    <button onClick={handleLogin}>Login</button>
+    <button onClick={handleLogin} className="auth-button" >👤 Login</button>
   </>
 ) : (
   <>
-    <button
+    <button className="auth-button"
       onClick={() => {
         localStorage.removeItem("token");
         setToken(null);
         setAdminData([]);
       }}
     >
-      Logout
+      👤 Logout
     </button>
 
     {role === "admin" && (
