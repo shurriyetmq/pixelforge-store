@@ -39,10 +39,10 @@ This website solves the problem of managing user-specific shopping experiences b
 - npm install
 - npm run dev
 
-username & password
+Login details (username , password)
 
-- regular user - testuser, 1234
-- admin - admin, 1234
+- user - testuser , 1234
+- admin - admin , 1234
 
 ### Dependencies
 
