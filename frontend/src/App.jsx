@@ -300,10 +300,12 @@ useEffect(() => {
     </p>
     <button className="auth-button"
       onClick={() => {
-        localStorage.removeItem("token");
-        setToken(null);
-        setAdminData([]);
-      }}
+  localStorage.removeItem("token");
+  setToken(null);
+  setCartItems([]);
+  setAdminData([]);
+  setCartOpen(false);
+}}
     >
       👤 Logout
     </button>
