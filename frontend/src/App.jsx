@@ -290,7 +290,7 @@ useEffect(() => {
 </button>
 
 <button onClick={() => setRegisterOpen(true)} className="auth-button">
-  Register
+  👤 Register
 </button>
   </>
 ) : (

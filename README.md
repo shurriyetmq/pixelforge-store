@@ -58,6 +58,7 @@ Backend
 - mysql-connector-python
 - passlib (bcrypt)
 - python-jose
+- python-dotenv
 
 ## Folder Structure
 
