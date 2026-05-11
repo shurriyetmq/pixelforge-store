@@ -20,14 +20,14 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-def verify_password(plain_password, hashed_password): # password funcions
+def verify_password(plain_password, hashed_password): # password hashing using bcrypt
     return pwd_context.verify(plain_password, hashed_password)
 
 def hash_password(password):
     return pwd_context.hash(password)
 
 
-def create_access_token(data: dict): #create JWT token
+def create_access_token(data: dict): #create JWT token with user role
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
@@ -83,12 +83,12 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
     
-def get_admin_user(token: str = Depends(oauth2_scheme)):
+def get_admin_user(token: str = Depends(oauth2_scheme)): #restricted by admin access
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
 
         if payload.get("role") != "admin":
-            raise HTTPException(status_code=403, detail="Not authorized")
+            raise HTTPException(status_code=403, detail="Not authorized") #deny access if not admin
 
         return payload
 
@@ -253,7 +253,7 @@ def register(user: User):
         connection.close()
 
 @app.get("/admin/carts")
-def get_all_carts(admin: dict = Depends(get_admin_user)):
+def get_all_carts(admin: dict = Depends(get_admin_user)): #restricted by admin access
     connection = get_db_connection()
     cursor = connection.cursor(dictionary=True)
 

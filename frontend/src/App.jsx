@@ -23,13 +23,13 @@ function App() {
   const [adminData, setAdminData] = useState([]);
   const [role, setRole] = useState(null);
 
-  const handleLogin = async () => {
+  const handleLogin = async () => { //sends a POST request to the backend
   const formData = new URLSearchParams();
   formData.append("username", username);
   formData.append("password", password);
 
   try {
-    const res = await fetch("http://127.0.0.1:8001/token", {
+    const res = await fetch("http://127.0.0.1:8001/token", { //if successful - the backend returns a JWT token
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -40,7 +40,7 @@ function App() {
     const data = await res.json();
 
     if (data.access_token) {
-      localStorage.setItem("token", data.access_token);
+      localStorage.setItem("token", data.access_token); //token is stored in local storage and used for future requests
       setToken(data.access_token);
       alert("Login successful!");
     } else {
@@ -265,7 +265,7 @@ useEffect(() => {
       👤 Logout
     </button>
 
-    {role === "admin" && (
+    {role === "admin" && ( //only show admin button if user is admin
   <button onClick={fetchAdminData}>
     View All Carts
   </button>
