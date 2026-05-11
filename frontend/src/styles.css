@@ -637,3 +637,11 @@ header h1 {
   color: #fff;
   border-color: #555;
 }
+
+.welcome-text {
+  color: white;
+  font-size: 0.9rem;
+  margin: 0;
+  margin-right: 0.6rem;
+  white-space: nowrap;
+}

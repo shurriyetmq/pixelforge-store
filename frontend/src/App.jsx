@@ -22,6 +22,7 @@ function App() {
   const [token, setToken] = useState(localStorage.getItem("token"));
   const [adminData, setAdminData] = useState([]);
   const [role, setRole] = useState(null);
+  const [currentUser, setCurrentUser] = useState("");
 
   const [registerOpen, setRegisterOpen] = useState(false);  
   const [registerUsername, setRegisterUsername] = useState("");
@@ -114,12 +115,16 @@ const fetchAdminData = () => {
     });
 };
 
-const getUserRole = () => {
+const getUserData = () => {
   if (!token) return null;
 
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
-    return payload.role;
+
+    return {
+      role: payload.role,
+      username: payload.sub,
+    };
   } catch (err) {
     console.error("Invalid token");
     return null;
@@ -128,9 +133,13 @@ const getUserRole = () => {
 
 useEffect(() => {
   if (token) {
-    setRole(getUserRole());
+    const userData = getUserData();
+
+    setRole(userData.role);
+    setCurrentUser(userData.username);
   } else {
     setRole(null);
+    setCurrentUser("");
   }
 }, [token]);
 
@@ -295,6 +304,9 @@ useEffect(() => {
   </>
 ) : (
   <>
+  <p className="welcome-text">
+      Welcome back, {currentUser}!
+    </p>
     <button className="auth-button"
       onClick={() => {
         localStorage.removeItem("token");
@@ -306,9 +318,12 @@ useEffect(() => {
     </button>
 
     {role === "admin" && ( //only show admin button if user is admin
-  <button onClick={fetchAdminData}>
-    View All Carts
-  </button>
+  <button
+  onClick={fetchAdminData}
+  className="auth-button"
+>
+  {adminData.length > 0 ? "🔒 Hide All Carts" : "🔓 View All Carts"}
+</button>
 )}
   </>
 )}
