@@ -28,6 +28,8 @@ function App() {
   const [registerUsername, setRegisterUsername] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
 
+  const [loginOpen, setLoginOpen] = useState(false);
+
   const handleRegister = async () => {
   try {
     const res = await fetch("http://127.0.0.1:8001/register", {
@@ -77,6 +79,7 @@ function App() {
     if (data.access_token) {
       localStorage.setItem("token", data.access_token); //token is stored in local storage and used for future requests
       setToken(data.access_token);
+      setLoginOpen(false);
       alert("Login successful!");
     } else {
       alert("Login failed");
@@ -282,25 +285,13 @@ useEffect(() => {
 <div className="auth-container">
 {!token ? (
   <>
-    <input className="auth-input"
-      type="text"
-      placeholder="Username"
-      value={username}
-      onChange={(e) => setUsername(e.target.value)}
-    />
-    <input className="auth-input"
-      type="password"
-      placeholder="Password"
-      value={password}
-      onChange={(e) => setPassword(e.target.value)}
-    />
-    <button onClick={handleLogin} className="auth-button">
-  👤 Login
-</button>
+    <button onClick={() => setLoginOpen(true)} className="auth-button">
+      👤 Login
+    </button>
 
-<button onClick={() => setRegisterOpen(true)} className="auth-button">
-  👤 Register
-</button>
+    <button onClick={() => setRegisterOpen(true)} className="auth-button">
+      👤 Register
+    </button>
   </>
 ) : (
   <>
@@ -345,6 +336,50 @@ useEffect(() => {
 
         
       </header>
+      {loginOpen && (
+  <div
+    className="register-overlay"
+    onClick={() => setLoginOpen(false)}
+  >
+    <div
+      className="register-modal"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        className="register-close"
+        onClick={() => setLoginOpen(false)}
+      >
+        ✖
+      </button>
+
+      <h2>Welcome Back</h2>
+      <p>Log in to access your PixelForge cart.</p>
+
+      <input
+        type="text"
+        placeholder="Username"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        className="register-input"
+      />
+
+      <input
+        type="password"
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        className="register-input"
+      />
+
+      <button
+        className="register-button"
+        onClick={handleLogin}
+      >
+        Login
+      </button>
+    </div>
+  </div>
+)}
 {registerOpen && (
   <div
     className="register-overlay"
