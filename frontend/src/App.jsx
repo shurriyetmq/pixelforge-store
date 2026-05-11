@@ -23,6 +23,40 @@ function App() {
   const [adminData, setAdminData] = useState([]);
   const [role, setRole] = useState(null);
 
+  const [registerOpen, setRegisterOpen] = useState(false);  
+  const [registerUsername, setRegisterUsername] = useState("");
+  const [registerPassword, setRegisterPassword] = useState("");
+
+  const handleRegister = async () => {
+  try {
+    const res = await fetch("http://127.0.0.1:8001/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username: registerUsername,
+        password: registerPassword,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.detail || "Registration failed");
+      return;
+    }
+
+    alert("Registration successful! You can now log in.");
+    setRegisterOpen(false);
+    setRegisterUsername("");
+    setRegisterPassword("");
+  } catch (err) {
+    console.error(err);
+    alert("Registration failed");
+  }
+};
+
   const handleLogin = async () => { //sends a POST request to the backend
   const formData = new URLSearchParams();
   formData.append("username", username);
@@ -251,7 +285,13 @@ useEffect(() => {
       value={password}
       onChange={(e) => setPassword(e.target.value)}
     />
-    <button onClick={handleLogin} className="auth-button" >👤 Login</button>
+    <button onClick={handleLogin} className="auth-button">
+  👤 Login
+</button>
+
+<button onClick={() => setRegisterOpen(true)} className="auth-button">
+  Register
+</button>
   </>
 ) : (
   <>
@@ -287,8 +327,53 @@ useEffect(() => {
 </span>}
           </button>
         </div>
-      </header>
 
+        
+      </header>
+{registerOpen && (
+  <div
+    className="register-overlay"
+    onClick={() => setRegisterOpen(false)}
+  >
+    <div
+      className="register-modal"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        className="register-close"
+        onClick={() => setRegisterOpen(false)}
+      >
+        ✖
+      </button>
+
+      <h2>Create Account</h2>
+      <p>Register for PixelForge to start saving your cart.</p>
+
+      <input
+        type="text"
+        placeholder="Choose a username"
+        value={registerUsername}
+        onChange={(e) => setRegisterUsername(e.target.value)}
+        className="register-input"
+      />
+
+      <input
+        type="password"
+        placeholder="Choose a password"
+        value={registerPassword}
+        onChange={(e) => setRegisterPassword(e.target.value)}
+        className="register-input"
+      />
+
+      <button
+        className="register-button"
+        onClick={handleRegister}
+      >
+        Register
+      </button>
+    </div>
+  </div>
+)}
       <div className="app">
         {/* sidebar filters */}
         <aside className="sidebar">

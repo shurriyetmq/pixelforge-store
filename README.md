@@ -41,7 +41,7 @@ This website solves the problem of managing user-specific shopping experiences b
 
 Login details (username , password)
 
-- user - testuser , 1234
+- user - testuser , 1234 || testuser2, 5678
 - admin - admin , 1234
 
 ### Dependencies
