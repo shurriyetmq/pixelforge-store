@@ -483,39 +483,40 @@ useEffect(() => {
             </div>
           </div>
         )}
-        {role === "admin" && adminData.length > 0 &&(
-  <div className="admin-carts">
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-  <h2>All Users' Carts</h2>
-
-  <button
+{role === "admin" && adminData.length > 0 && (
+  <div
+    className="admin-overlay"
     onClick={() => setAdminData([])}
-    style={{
-      background: "transparent",
-      border: "none",
-      fontSize: "1.2rem",
-      cursor: "pointer"
-    }}
   >
-    ✖
-  </button>
-</div>
+    <div
+      className="admin-drawer"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        className="cart-close"
+        onClick={() => setAdminData([])}
+      >
+        ✖
+      </button>
 
-    {adminData.map((item, index) => (
-      <div key={index} className="admin-cart-item">
-        <img
-          src={item.image_url}
-          alt={item.name}
-          style={{ width: "60px", height: "60px", objectFit: "cover" }}
-        />
-        <div>
-          <p><strong>User:</strong> {item.username}</p>
-          <p><strong>Product:</strong> {item.name}</p>
-          <p><strong>Quantity:</strong> {item.quantity}</p>
-          <p><strong>Price:</strong> ${item.price.toFixed(2)}</p>
+      <h2>All Users' Carts</h2>
+
+      {adminData.map((item, index) => (
+        <div key={index} className="admin-cart-item">
+          <img
+            src={item.image_url}
+            alt={item.name}
+          />
+
+          <div>
+            <p><strong>User:</strong> {item.username}</p>
+            <p><strong>Product:</strong> {item.name}</p>
+            <p><strong>Quantity:</strong> {item.quantity}</p>
+            <p><strong>Price:</strong> ${item.price.toFixed(2)}</p>
+          </div>
         </div>
-      </div>
-    ))}
+      ))}
+    </div>
   </div>
 )}
         {loading && <p>Loading products...</p>}
