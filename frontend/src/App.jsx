@@ -455,6 +455,7 @@ useEffect(() => {
           <div className="cart-overlay" onClick={() => setCartOpen(false)}>
             <div className="cart" onClick={(e) => e.stopPropagation()}>
               <button className="cart-close" onClick={() => setCartOpen(false)}>✖</button>
+              <h2 className="cart-title">Your Cart</h2>
 
               {cartItems.length === 0 ? (
                 <p>Your cart is empty!</p>
